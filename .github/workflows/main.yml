@@ -1,0 +1,85 @@
+name: Parallel 
+
+on:
+  # This allows you to manually run the workflow from the Actions tab in GitHub.
+  workflow_dispatch:
+    inputs:
+      crd_code_1:
+        description: 'CRD Auth Code for Device 1'
+        required: true
+        type: string
+      crd_code_2:
+        description: 'CRD Auth Code for Device 2'
+        required: true
+        type: string
+      crd_code_3:
+        description: 'CRD Auth Code for Device 3'
+        required: true
+        type: string
+      crd_code_4:
+        description: 'CRD Auth Code for Device 4'
+        required: true
+        type: string
+      crd_code_5:
+        description: 'CRD Auth Code for Device 5'
+        required: true
+        type: string
+
+jobs:
+  remote_session:
+    # The job name is dynamic, including the device number from the matrix.
+    name: Remote Session ${{ matrix.device }}
+    
+    # This is the runner you specified.
+    runs-on: windows-latest
+    timeout-minutes: 360 # 6 hours
+
+    strategy:
+      # Ensures that if one remote session fails, the others will continue to run.
+      fail-fast: false
+      matrix:
+        # The 'include' block is the clean way to create your parallel jobs.
+        # It directly maps a device number to its corresponding authorization code from the inputs.
+        include:
+          - device: 1
+            crd_code: ${{ github.event.inputs.crd_code_1 }}
+          - device: 2
+            crd_code: ${{ github.event.inputs.crd_code_2 }}
+          - device: 3
+            crd_code: ${{ github.event.inputs.crd_code_3 }}
+          - device: 4
+            crd_code: ${{ github.event.inputs.crd_code_4 }}
+          - device: 5
+            crd_code: ${{ github.event.inputs.crd_code_5 }}
+
+    steps:
+    - name: Install and Start Chrome Remote Desktop
+      shell: pwsh
+      run: |
+        Write-Host "Installing and configuring CRD for Device ${{ matrix.device }}..."
+        
+        # Download the CRD host installer
+        Invoke-WebRequest -Uri "https://dl.google.com/dl/edgedl/chrome-remote-desktop/chromeremotedesktophost.msi" -OutFile "crd_host.msi"
+        
+        # Install the host service silently
+        Start-Process msiexec.exe -Wait -ArgumentList '/i crd_host.msi /quiet'
+        
+        # Start and configure the host using the code from the matrix.
+        # The COMPUTERNAME variable provides a unique base name for the runner.
+        & "${Env:PROGRAMFILES(X86)}\Google\Chrome Remote Desktop\CurrentVersion\remoting_start_host.exe" --code="${{ matrix.crd_code }}" --redirect-url="https://remotedesktop.google.com/_/oauthredirect" --name="${{ env.COMPUTERNAME }}-${{ matrix.device }}" --pin="112233"
+        
+        # Output the connection details clearly in the logs for easy access
+        Write-Host "=============================================="
+        Write-Host "✅ Chrome Remote Desktop is configured."
+        Write-Host "   Connect to: ${{ env.COMPUTERNAME }}-${{ matrix.device }}"
+        Write-Host "   Access PIN: 112233"
+        Write-Host "=============================================="
+
+    - name: Keep Runner Alive for 6 Hours
+      # `if: always()` ensures this step runs even if the CRD setup fails,
+      # keeping the machine online so you can debug what went wrong.
+      if: always()
+      shell: pwsh
+      run: |
+        Write-Host "Session is active. This runner will remain online for approximately 6 hours."
+        Start-Sleep -Seconds 21600 # 21600 seconds = 6 hours
