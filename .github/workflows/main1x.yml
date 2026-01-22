@@ -16,7 +16,7 @@ jobs:
     
     # This is the runner you specified.
     runs-on: windows-latest
-    timeout-minutes: 360 # 6 hours
+    timeout-minutes: 30 # 6 hours
 
     strategy:
       # Ensures that if one remote session fails, the others will continue to run.
@@ -50,7 +50,7 @@ jobs:
         Write-Host "   Connect to: ${{ env.COMPUTERNAME }}-${{ matrix.device }}"
         Write-Host "   Access PIN: 112233"
         Write-Host "=============================================="
-    - name: Keep Runner Alive for 6 Hours
+    - name: Keep Runner Alive for 30 minutes
       # `if: always()` ensures this step runs even if the CRD setup fails,
       # keeping the machine online so you can debug what went wrong.
       if: always()
