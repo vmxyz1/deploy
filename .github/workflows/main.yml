@@ -32,7 +32,7 @@ jobs:
     
     # This is the runner you specified.
     runs-on: windows-latest
-    timeout-minutes: 360 # 6 hours
+    timeout-minutes: 60 # 1 hour
 
     strategy:
       # Ensures that if one remote session fails, the others will continue to run.
@@ -75,11 +75,11 @@ jobs:
         Write-Host "   Access PIN: 112233"
         Write-Host "=============================================="
 
-    - name: Keep Runner Alive for 6 Hours
+    - name: Keep Runner Alive for 1 hour
       # `if: always()` ensures this step runs even if the CRD setup fails,
       # keeping the machine online so you can debug what went wrong.
       if: always()
       shell: pwsh
       run: |
         Write-Host "Session is active. This runner will remain online for approximately 6 hours."
-        Start-Sleep -Seconds 21600 # 21600 seconds = 6 hours
+        Start-Sleep -Seconds 3600 # 3600 seconds = 1 hour
